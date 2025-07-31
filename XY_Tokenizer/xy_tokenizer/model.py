@@ -128,7 +128,7 @@ class XY_Tokenizer(nn.Module):
         }
         
     @torch.inference_mode()
-    def encode(self, wav_list, overlap_seconds=10, device=torch.device("cuda")):
+    def encode(self, wav_list, overlap_seconds=10, device=None):
         """
             Input:
                 wav_list: List of audio waveforms, each with potentially different length, may exceed 30 seconds # B * (T,)
@@ -137,6 +137,10 @@ class XY_Tokenizer(nn.Module):
                 dict: Contains the following key-value pairs
                     "codes_list": List of quantization codes # B * (nq, T)
         """
+        # Auto-select device if not specified
+        if device is None:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
         duration_seconds = 30 - overlap_seconds
         chunk_size = int(30 * self.input_sample_rate) # Maximum samples per chunk
         duration_size = int(duration_seconds * self.input_sample_rate) # Valid output samples per chunk
@@ -192,7 +196,7 @@ class XY_Tokenizer(nn.Module):
         }
         
     @torch.inference_mode()
-    def decode(self, codes_list, overlap_seconds=10, device=torch.device("cuda")):
+    def decode(self, codes_list, overlap_seconds=10, device=None):
         """
             Input:
                 codes_list: List of quantization codes # B * (nq, T)
@@ -201,6 +205,10 @@ class XY_Tokenizer(nn.Module):
                 dict: Contains the following key-value pairs
                     "syn_wav_list": List of synthesized audio waveforms # B * (T,)
         """
+        # Auto-select device if not specified
+        if device is None:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
         duration_seconds = 30 - overlap_seconds
         chunk_code_length = int(30 * self.input_sample_rate // self.encoder_downsample_rate) # Maximum code length per chunk
         duration_code_length = int(duration_seconds * self.input_sample_rate // self.encoder_downsample_rate) # Valid code length per chunk

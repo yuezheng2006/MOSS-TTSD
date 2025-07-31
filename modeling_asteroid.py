@@ -11,7 +11,13 @@ from transformers.generation.configuration_utils import GenerationConfig
 from transformers.generation.stopping_criteria import StoppingCriteriaList
 from transformers import PreTrainedModel, GenerationMixin, Qwen3Config, Qwen3Model
 from transformers.generation.logits_process import LogitsProcessorList, RepetitionPenaltyLogitsProcessor, TopKLogitsWarper, TopPLogitsWarper, TemperatureLogitsWarper
-from liger_kernel.transformers.model.loss_utils import LigerForCausalLMLoss
+try:
+    from liger_kernel.transformers.model.loss_utils import LigerForCausalLMLoss
+    LIGER_AVAILABLE = True
+except ImportError:
+    print("Warning: liger_kernel not available, using standard CrossEntropyLoss")
+    LigerForCausalLMLoss = None
+    LIGER_AVAILABLE = False
 
 
 class AsteroidTTSConfig(Qwen3Config):
@@ -386,7 +392,7 @@ class AsteroidTTSInstruct(AsteroidTTSPretrainedModel, CustomMixin):
             
             for i in range(self.config.channels):
                 vocab_size = self.config.vocab_size if i == 0 else self.config.speech_vocab_size
-                if skip_logits:
+                if skip_logits and LIGER_AVAILABLE:
                     loss_all[i] = LigerForCausalLMLoss(
                         hidden_states=hidden_states,
                         lm_head_weight=self.lm_heads[i].weight,
