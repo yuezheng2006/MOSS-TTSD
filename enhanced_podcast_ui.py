@@ -131,7 +131,17 @@ def use_default_audio(audio_type):
     text_key = f"{audio_type}_text"
     
     if audio_key in defaults and os.path.exists(defaults[audio_key]):
-        return defaults[audio_key], defaults[text_key]
+        # 创建临时副本供Gradio使用
+        try:
+            import tempfile
+            temp_dir = tempfile.gettempdir()
+            temp_filename = f"gradio_default_{audio_type}_{int(time.time())}_{os.path.basename(defaults[audio_key])}"
+            temp_path = os.path.join(temp_dir, temp_filename)
+            shutil.copy2(defaults[audio_key], temp_path)
+            return temp_path, defaults[text_key]
+        except Exception as e:
+            print(f"❌ 复制默认音频文件失败: {e}")
+            return None, defaults[text_key]
     else:
         return None, "默认音频文件不存在"
 
@@ -509,11 +519,39 @@ def create_enhanced_ui():
         def load_selected_scenario(scenario_name):
             content = load_scenario_content(scenario_name)
             if content:
+                # 处理音频文件路径
+                base_path = content.get("base_path", "examples")
+                
+                def get_audio_path(audio_filename):
+                    if not audio_filename:
+                        return None
+                    
+                    # 构建完整路径
+                    full_path = os.path.join(base_path, audio_filename)
+                    if not os.path.exists(full_path):
+                        print(f"⚠️ 音频文件不存在: {full_path}")
+                        return None
+                    
+                    # 创建临时副本供Gradio使用
+                    try:
+                        import tempfile
+                        temp_dir = tempfile.gettempdir()
+                        temp_filename = f"gradio_audio_{int(time.time())}_{audio_filename}"
+                        temp_path = os.path.join(temp_dir, temp_filename)
+                        shutil.copy2(full_path, temp_path)
+                        return temp_path
+                    except Exception as e:
+                        print(f"❌ 复制音频文件失败: {e}")
+                        return None
+                
+                audio1_path = get_audio_path(content.get("prompt_audio_speaker1"))
+                audio2_path = get_audio_path(content.get("prompt_audio_speaker2"))
+                
                 return (
                     content["text"],
-                    content.get("prompt_audio_speaker1", "zh_spk1_moon.wav"),
+                    audio1_path,
                     content.get("prompt_text_speaker1", ""),
-                    content.get("prompt_audio_speaker2", "zh_spk2_moon.wav"), 
+                    audio2_path,
                     content.get("prompt_text_speaker2", "")
                 )
             else:
@@ -581,11 +619,27 @@ def create_enhanced_ui():
         # 加载默认音频按钮
         def load_all_defaults():
             defaults = get_default_audio_files()
+            
+            def copy_to_temp(file_path, speaker_name):
+                if not os.path.exists(file_path):
+                    return None
+                try:
+                    import tempfile
+                    temp_dir = tempfile.gettempdir()
+                    temp_filename = f"gradio_all_{speaker_name}_{int(time.time())}_{os.path.basename(file_path)}"
+                    temp_path = os.path.join(temp_dir, temp_filename)
+                    shutil.copy2(file_path, temp_path)
+                    return temp_path
+                except Exception as e:
+                    print(f"❌ 复制音频文件失败 {file_path}: {e}")
+                    return None
+            
+            audio1_path = copy_to_temp(defaults["speaker1_audio"], "spk1")
+            audio2_path = copy_to_temp(defaults["speaker2_audio"], "spk2")
+            
             return (
-                defaults["speaker1_audio"] if os.path.exists(defaults["speaker1_audio"]) else None,
-                defaults["speaker1_text"],
-                defaults["speaker2_audio"] if os.path.exists(defaults["speaker2_audio"]) else None,
-                defaults["speaker2_text"]
+                audio1_path, defaults["speaker1_text"],
+                audio2_path, defaults["speaker2_text"]
             )
         
         default_audio_btn.click(
