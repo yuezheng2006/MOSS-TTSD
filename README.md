@@ -457,6 +457,15 @@ We will further optimize the model for stability in subsequent versions.
 
 MOSS-TTSD is released under the Apache 2.0 license.
 
+## 📚 Documentation
+
+For detailed usage instructions and technical information, please refer to our documentation:
+
+- **[📖 Complete Documentation](docs/)** - All documentation in one place
+- **[🚀 User Guide](docs/使用指南.md)** - Quick start and usage instructions  
+- **[🛠️ Technical Documentation](docs/技术文档.md)** - Architecture and technical details
+- **[🎭 Scenario Examples](docs/场景示例.md)** - Podcast scene templates and examples
+
 ## Citation
 
 ```
