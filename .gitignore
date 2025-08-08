@@ -1,1 +1,11 @@
+## python
 __pycache__/
+
+## macos
+.DS_Store
+
+## cursor
+.cursor/
+
+## temporary files
+.temp/
